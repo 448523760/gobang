@@ -18,11 +18,17 @@ pub mod utils;
 #[cfg(debug_assertions)]
 pub mod debug;
 
+use std::convert::TryInto;
+
+use anyhow::Result;
+use async_trait::async_trait;
 pub use command::{CommandInfo, CommandText};
 pub use completion::CompletionComponent;
 pub use connections::ConnectionsComponent;
 pub use database_filter::DatabaseFilterComponent;
 pub use databases::DatabasesComponent;
+#[cfg(debug_assertions)]
+pub use debug::DebugComponent;
 pub use error::ErrorComponent;
 pub use help::HelpComponent;
 pub use properties::PropertiesComponent;
@@ -33,99 +39,84 @@ pub use table::TableComponent;
 pub use table_filter::TableFilterComponent;
 pub use table_status::TableStatusComponent;
 pub use table_value::TableValueComponent;
-
-#[cfg(debug_assertions)]
-pub use debug::DebugComponent;
-
-use crate::database::Pool;
-use anyhow::Result;
-use async_trait::async_trait;
-use std::convert::TryInto;
 use tui::{backend::Backend, layout::Rect, Frame};
 use unicode_width::UnicodeWidthChar;
 
+use crate::database::Pool;
+
 #[derive(PartialEq, Debug)]
 pub enum EventState {
-    Consumed,
-    NotConsumed,
+  Consumed,
+  NotConsumed,
 }
 
 impl EventState {
-    pub fn is_consumed(&self) -> bool {
-        *self == Self::Consumed
-    }
+  pub fn is_consumed(&self) -> bool {
+    *self == Self::Consumed
+  }
 }
 
 impl From<bool> for EventState {
-    fn from(consumed: bool) -> Self {
-        if consumed {
-            Self::Consumed
-        } else {
-            Self::NotConsumed
-        }
+  fn from(consumed: bool) -> Self {
+    if consumed {
+      Self::Consumed
+    } else {
+      Self::NotConsumed
     }
+  }
 }
 
 pub trait DrawableComponent {
-    fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect, focused: bool) -> Result<()>;
+  fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect, focused: bool) -> Result<()>;
 }
 
 pub trait StatefulDrawableComponent {
-    fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool) -> Result<()>;
+  fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool) -> Result<()>;
 }
 
 pub trait MovableComponent {
-    fn draw<B: Backend>(
-        &mut self,
-        f: &mut Frame<B>,
-        rect: Rect,
-        focused: bool,
-        x: u16,
-        y: u16,
-    ) -> Result<()>;
+  fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool, x: u16, y: u16) -> Result<()>;
 }
 
 /// base component trait
 #[async_trait]
 pub trait Component {
-    fn commands(&self, out: &mut Vec<CommandInfo>);
+  fn commands(&self, out: &mut Vec<CommandInfo>);
 
-    fn event(&mut self, key: crate::event::Key) -> Result<EventState>;
+  fn event(&mut self, key: crate::event::Key) -> Result<EventState>;
 
-    async fn async_event(
-        &mut self,
-        _key: crate::event::Key,
-        _pool: &Box<dyn Pool>,
-    ) -> Result<EventState> {
-        Ok(EventState::NotConsumed)
+  async fn async_event(&mut self, _key: crate::event::Key, _pool: &Box<dyn Pool>) -> Result<EventState> {
+    Ok(EventState::NotConsumed)
+  }
+
+  fn focused(&self) -> bool {
+    false
+  }
+
+  fn focus(&mut self, _focus: bool) {
+  }
+
+  fn is_visible(&self) -> bool {
+    true
+  }
+
+  fn hide(&mut self) {
+  }
+
+  fn show(&mut self) -> Result<()> {
+    Ok(())
+  }
+
+  fn toggle_visible(&mut self) -> Result<()> {
+    if self.is_visible() {
+      self.hide();
+      Ok(())
+    } else {
+      self.show()
     }
-
-    fn focused(&self) -> bool {
-        false
-    }
-
-    fn focus(&mut self, _focus: bool) {}
-
-    fn is_visible(&self) -> bool {
-        true
-    }
-
-    fn hide(&mut self) {}
-
-    fn show(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    fn toggle_visible(&mut self) -> Result<()> {
-        if self.is_visible() {
-            self.hide();
-            Ok(())
-        } else {
-            self.show()
-        }
-    }
+  }
 }
 
 fn compute_character_width(c: char) -> u16 {
-    UnicodeWidthChar::width(c).unwrap().try_into().unwrap()
+  UnicodeWidthChar::width(c).unwrap().try_into().unwrap()
 }

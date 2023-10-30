@@ -15,5 +15,4 @@ tab_spaces = 2
 use_field_init_shorthand = true
 use_try_shorthand = true
 
-merge_imports = true
 wrap_comments = true

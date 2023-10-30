@@ -2,56 +2,56 @@ use serde::Deserialize;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Deserialize)]
 pub enum LogLevel {
-    Quiet,
-    Error,
-    Info,
+  Quiet,
+  Error,
+  Info,
 }
 
 impl Default for LogLevel {
-    fn default() -> Self {
-        Self::Info
-    }
+  fn default() -> Self {
+    Self::Info
+  }
 }
 
 impl LogLevel {
-    pub fn is_writable(&self, level: &Self) -> bool {
-        use std::cmp::Ordering;
-        matches!(self.cmp(level), Ordering::Greater | Ordering::Equal)
-    }
+  pub fn is_writable(&self, level: &Self) -> bool {
+    use std::cmp::Ordering;
+    matches!(self.cmp(level), Ordering::Greater | Ordering::Equal)
+  }
 
-    pub fn write(&self, level: &Self) -> Box<dyn std::io::Write> {
-        if self.is_writable(level) {
-            match level {
-                Self::Error => Box::from(std::io::stderr()),
-                _ => Box::from(std::io::stdout()),
-            }
-        } else {
-            Box::from(std::io::sink())
-        }
+  pub fn write(&self, level: &Self) -> Box<dyn std::io::Write> {
+    if self.is_writable(level) {
+      match level {
+        Self::Error => Box::from(std::io::stderr()),
+        _ => Box::from(std::io::stdout()),
+      }
+    } else {
+      Box::from(std::io::sink())
     }
+  }
 }
 
 impl From<LogLevel> for &'static str {
-    fn from(log_level: LogLevel) -> &'static str {
-        match log_level {
-            LogLevel::Quiet => "quiet",
-            LogLevel::Info => "info",
-            LogLevel::Error => "error",
-        }
+  fn from(log_level: LogLevel) -> &'static str {
+    match log_level {
+      LogLevel::Quiet => "quiet",
+      LogLevel::Info => "info",
+      LogLevel::Error => "error",
     }
+  }
 }
 
 impl std::str::FromStr for LogLevel {
-    type Err = String;
+  type Err = String;
 
-    fn from_str(s: &str) -> Result<LogLevel, Self::Err> {
-        match s {
-            "quiet" => Ok(Self::Quiet),
-            "info" | "all" => Ok(Self::Info),
-            "error" => Ok(Self::Error),
-            level => Err(format!("I don't know the log level of {:?}", level)),
-        }
+  fn from_str(s: &str) -> Result<LogLevel, Self::Err> {
+    match s {
+      "quiet" => Ok(Self::Quiet),
+      "info" | "all" => Ok(Self::Info),
+      "error" => Ok(Self::Error),
+      level => Err(format!("I don't know the log level of {:?}", level)),
     }
+  }
 }
 
 #[macro_export]
