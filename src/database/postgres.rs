@@ -1,26 +1,18 @@
-use crate::get_or_null;
-
-use super::{ExecuteResult, Pool, TableRow, RECORDS_LIMIT_PER_PAGE};
+use super::{ExecuteResult, Pool, TableRow};
 use async_trait::async_trait;
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use database_tree::{Child, Database, Schema, Table};
-use futures::TryStreamExt;
 use itertools::Itertools;
-use sqlx::postgres::{PgColumn, PgPool, PgPoolOptions, PgRow};
-use sqlx::{Column as _, Row as _, TypeInfo as _};
-use std::time::Duration;
+use core::option::Option;
+use serde_json::Value;
 
 pub struct PostgresPool {
-    pool: PgPool,
+    pool: String,
 }
 
 impl PostgresPool {
     pub async fn new(database_url: &str) -> anyhow::Result<Self> {
         Ok(Self {
-            pool: PgPoolOptions::new()
-                .connect_timeout(Duration::from_secs(5))
-                .connect(database_url)
-                .await?,
+            pool: "Fake".to_string()
         })
     }
 }
@@ -150,21 +142,12 @@ impl Pool for PostgresPool {
     async fn execute(&self, query: &String) -> anyhow::Result<ExecuteResult> {
         let query = query.trim();
         if query.to_uppercase().starts_with("SELECT") {
-            let mut rows = sqlx::query(query).fetch(&self.pool);
-            let mut headers = vec![];
-            let mut records = vec![];
-            while let Some(row) = rows.try_next().await? {
-                headers = row
-                    .columns()
-                    .iter()
-                    .map(|column| column.name().to_string())
-                    .collect();
-                let mut new_row = vec![];
-                for column in row.columns() {
-                    new_row.push(convert_column_value_to_string(&row, column)?)
-                }
-                records.push(new_row)
-            }
+            let mut headers = vec!["header1".to_string(), "header2".to_string()];
+            let mut records = vec![
+                vec!["record1-1".to_string(), "record1-2".to_string()],
+                vec!["record2-1".to_string(), "record2-2".to_string()]
+            ];
+
             return Ok(ExecuteResult::Read {
                 headers,
                 rows: records,
@@ -182,19 +165,11 @@ impl Pool for PostgresPool {
             });
         }
 
-        let result = sqlx::query(query).execute(&self.pool).await?;
-        Ok(ExecuteResult::Write {
-            updated_rows: result.rows_affected(),
-        })
+        Ok(ExecuteResult::Write{updated_rows: 1})
     }
 
     async fn get_databases(&self) -> anyhow::Result<Vec<Database>> {
-        let databases = sqlx::query("SELECT datname FROM pg_database")
-            .fetch_all(&self.pool)
-            .await?
-            .iter()
-            .map(|table| table.get(0))
-            .collect::<Vec<String>>();
+        let databases = vec!["database_fake".to_string()];
         let mut list = vec![];
         for db in databases {
             list.push(Database::new(
@@ -206,20 +181,17 @@ impl Pool for PostgresPool {
     }
 
     async fn get_tables(&self, database: String) -> anyhow::Result<Vec<Child>> {
-        let mut rows =
-            sqlx::query("SELECT * FROM information_schema.tables WHERE table_catalog = $1")
-                .bind(database)
-                .fetch(&self.pool);
-        let mut tables = Vec::new();
-        while let Some(row) = rows.try_next().await? {
-            tables.push(Table {
-                name: row.try_get("table_name")?,
+
+        let mut tables = vec![
+            Table {
+                name: "fake_table_name".to_string(),
                 create_time: None,
                 update_time: None,
                 engine: None,
-                schema: row.try_get("table_schema")?,
-            })
-        }
+                schema: Some("table_schema".to_string()),
+            }
+        ];
+
         let mut schemas = vec![];
         for (key, group) in &tables
             .iter()
@@ -246,75 +218,11 @@ impl Pool for PostgresPool {
         page: u16,
         filter: Option<String>,
     ) -> anyhow::Result<(Vec<String>, Vec<Vec<String>>)> {
-        let query = if let Some(filter) = filter.as_ref() {
-            format!(
-                r#"SELECT * FROM "{database}"."{table_schema}"."{table}" WHERE {filter} LIMIT {limit} OFFSET {page}"#,
-                database = database.name,
-                table = table.name,
-                filter = filter,
-                table_schema = table.schema.clone().unwrap_or_else(|| "public".to_string()),
-                page = page,
-                limit = RECORDS_LIMIT_PER_PAGE
-            )
-        } else {
-            format!(
-                r#"SELECT * FROM "{database}"."{table_schema}"."{table}" LIMIT {limit} OFFSET {page}"#,
-                database = database.name,
-                table = table.name,
-                table_schema = table.schema.clone().unwrap_or_else(|| "public".to_string()),
-                page = page,
-                limit = RECORDS_LIMIT_PER_PAGE
-            )
-        };
-        let mut rows = sqlx::query(query.as_str()).fetch(&self.pool);
-        let mut headers = vec![];
-        let mut records = vec![];
-        let mut json_records = None;
-        while let Some(row) = rows.try_next().await? {
-            headers = row
-                .columns()
-                .iter()
-                .map(|column| column.name().to_string())
-                .collect();
-            let mut new_row = vec![];
-            for column in row.columns() {
-                match convert_column_value_to_string(&row, column) {
-                    Ok(v) => new_row.push(v),
-                    Err(_) => {
-                        if json_records.is_none() {
-                            json_records = Some(
-                                self.get_json_records(database, table, page, filter.clone())
-                                    .await?,
-                            );
-                        }
-                        if let Some(json_records) = &json_records {
-                            match json_records
-                                .get(records.len())
-                                .unwrap()
-                                .get(column.name())
-                                .unwrap()
-                            {
-                                serde_json::Value::String(v) => new_row.push(v.to_string()),
-                                serde_json::Value::Null => new_row.push("NULL".to_string()),
-                                serde_json::Value::Array(v) => {
-                                    new_row.push(v.iter().map(|v| v.to_string()).join(","))
-                                }
-                                serde_json::Value::Number(v) => new_row.push(v.to_string()),
-                                serde_json::Value::Bool(v) => new_row.push(v.to_string()),
-                                others => {
-                                    panic!(
-                                        "column type not implemented: `{}` {}",
-                                        column.name(),
-                                        others
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            records.push(new_row)
-        }
+        let mut headers = vec!["header1".to_string(), "header2".to_string()];
+        let mut records = vec![
+            vec!["record1-1".to_string(), "record1-2".to_string()],
+            vec!["record2-1".to_string(), "record2-2".to_string()]
+        ];
         Ok((headers, records))
     }
 
@@ -323,25 +231,26 @@ impl Pool for PostgresPool {
         database: &Database,
         table: &Table,
     ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
-        let table_schema = table
-            .schema
-            .as_ref()
-            .map_or("public", |schema| schema.as_str());
-        let mut rows = sqlx::query(
-            "SELECT * FROM information_schema.columns WHERE table_catalog = $1 AND table_schema = $2 AND table_name = $3"
-        )
-        .bind(&database.name).bind(table_schema).bind(&table.name)
-        .fetch(&self.pool);
-        let mut columns: Vec<Box<dyn TableRow>> = vec![];
-        while let Some(row) = rows.try_next().await? {
-            columns.push(Box::new(Column {
-                name: row.try_get("column_name")?,
-                r#type: row.try_get("data_type")?,
-                null: row.try_get("is_nullable")?,
-                default: row.try_get("column_default")?,
+        let mut columns: Vec<Box<dyn TableRow>> = vec![
+            Box::new(
+                Column {
+                name: Some("column_1".to_string()),
+                r#type: Some("type".to_string()),
+                null: None,
+                default: Some("default_value".to_string()),
                 comment: None,
-            }))
-        }
+                }
+            ),
+            Box::new(
+                Column {
+                    name: Some("column_2".to_string()),
+                    r#type: Some("type".to_string()),
+                    null: None,
+                    default: Some("default_value".to_string()),
+                    comment: None,
+                }
+            )
+        ];
         Ok(columns)
     }
 
@@ -350,36 +259,7 @@ impl Pool for PostgresPool {
         _database: &Database,
         table: &Table,
     ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
-        let mut rows = sqlx::query(
-            "
-        SELECT
-            tc.table_schema,
-            tc.constraint_name,
-            tc.table_name,
-            kcu.column_name,
-            ccu.table_schema AS foreign_table_schema,
-            ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-        FROM
-            information_schema.table_constraints AS tc
-            JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-            JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
-            AND ccu.table_schema = tc.table_schema
-        WHERE
-            NOT tc.constraint_type = 'FOREIGN KEY'
-            AND tc.table_name = $1
-        ",
-        )
-        .bind(&table.name)
-        .fetch(&self.pool);
-        let mut constraints: Vec<Box<dyn TableRow>> = vec![];
-        while let Some(row) = rows.try_next().await? {
-            constraints.push(Box::new(Constraint {
-                name: row.try_get("constraint_name")?,
-                column_name: row.try_get("column_name")?,
-            }))
-        }
+        let constraints: Vec<Box<dyn TableRow>> = vec![];
         Ok(constraints)
     }
 
@@ -388,38 +268,7 @@ impl Pool for PostgresPool {
         _database: &Database,
         table: &Table,
     ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
-        let mut rows = sqlx::query(
-            "
-        SELECT
-            tc.table_schema,
-            tc.constraint_name,
-            tc.table_name,
-            kcu.column_name,
-            ccu.table_schema AS foreign_table_schema,
-            ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-        FROM
-            information_schema.table_constraints AS tc
-            JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-            JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
-            AND ccu.table_schema = tc.table_schema
-        WHERE
-            tc.constraint_type = 'FOREIGN KEY'
-            AND tc.table_name = $1
-        ",
-        )
-        .bind(&table.name)
-        .fetch(&self.pool);
-        let mut constraints: Vec<Box<dyn TableRow>> = vec![];
-        while let Some(row) = rows.try_next().await? {
-            constraints.push(Box::new(ForeignKey {
-                name: row.try_get("constraint_name")?,
-                column_name: row.try_get("column_name")?,
-                ref_table: row.try_get("foreign_table_name")?,
-                ref_column: row.try_get("foreign_column_name")?,
-            }))
-        }
+        let constraints: Vec<Box<dyn TableRow>> = vec![];
         Ok(constraints)
     }
 
@@ -428,47 +277,12 @@ impl Pool for PostgresPool {
         _database: &Database,
         table: &Table,
     ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
-        let mut rows = sqlx::query(
-            "
-        SELECT
-            t.relname AS table_name,
-            i.relname AS index_name,
-            a.attname AS column_name,
-            am.amname AS type
-        FROM
-            pg_class t,
-            pg_class i,
-            pg_index ix,
-            pg_attribute a,
-            pg_am am
-        WHERE
-            t.oid = ix.indrelid
-            and i.oid = ix.indexrelid
-            and a.attrelid = t.oid
-            and a.attnum = ANY(ix.indkey)
-            and t.relkind = 'r'
-            and am.oid = i.relam
-            and t.relname = $1
-        ORDER BY
-            t.relname,
-            i.relname
-        ",
-        )
-        .bind(&table.name)
-        .fetch(&self.pool);
-        let mut foreign_keys: Vec<Box<dyn TableRow>> = vec![];
-        while let Some(row) = rows.try_next().await? {
-            foreign_keys.push(Box::new(Index {
-                name: row.try_get("index_name")?,
-                column_name: row.try_get("column_name")?,
-                r#type: row.try_get("type")?,
-            }))
-        }
+        let foreign_keys: Vec<Box<dyn TableRow>> = vec![];
         Ok(foreign_keys)
     }
 
     async fn close(&self) {
-        self.pool.close().await;
+       todo!("mock the close with sleep")
     }
 }
 
@@ -480,92 +294,9 @@ impl PostgresPool {
         page: u16,
         filter: Option<String>,
     ) -> anyhow::Result<Vec<serde_json::Value>> {
-        let query = if let Some(filter) = filter {
-            format!(
-                r#"SELECT to_json("{table}".*) FROM "{database}"."{table_schema}"."{table}" WHERE {filter} LIMIT {limit} OFFSET {page}"#,
-                database = database.name,
-                table = table.name,
-                filter = filter,
-                table_schema = table.schema.clone().unwrap_or_else(|| "public".to_string()),
-                page = page,
-                limit = RECORDS_LIMIT_PER_PAGE
-            )
-        } else {
-            format!(
-                r#"SELECT to_json("{table}".*) FROM "{database}"."{table_schema}"."{table}" LIMIT {limit} OFFSET {page}"#,
-                database = database.name,
-                table = table.name,
-                table_schema = table.schema.clone().unwrap_or_else(|| "public".to_string()),
-                page = page,
-                limit = RECORDS_LIMIT_PER_PAGE
-            )
-        };
-        let json: Vec<(serde_json::Value,)> =
-            sqlx::query_as(query.as_str()).fetch_all(&self.pool).await?;
-        Ok(json.iter().map(|v| v.clone().0).collect())
-    }
-}
-
-fn convert_column_value_to_string(row: &PgRow, column: &PgColumn) -> anyhow::Result<String> {
-    let column_name = column.name();
-    if let Ok(value) = row.try_get(column_name) {
-        let value: Option<i16> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<i32> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<i64> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<rust_decimal::Decimal> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<&[u8]> = value;
-        Ok(value.map_or("NULL".to_string(), |values| {
-            format!(
-                "\\x{}",
-                values
-                    .iter()
-                    .map(|v| format!("{:02x}", v))
-                    .collect::<String>()
-            )
-        }))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<NaiveDate> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: String = value;
-        Ok(value)
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<chrono::DateTime<chrono::Utc>> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<chrono::DateTime<chrono::Local>> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<NaiveDateTime> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<NaiveDate> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<NaiveTime> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<serde_json::Value> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get::<Option<bool>, _>(column_name) {
-        let value: Option<bool> = value;
-        Ok(get_or_null!(value))
-    } else if let Ok(value) = row.try_get(column_name) {
-        let value: Option<Vec<String>> = value;
-        Ok(value.map_or("NULL".to_string(), |v| v.join(",")))
-    } else {
-        anyhow::bail!(
-            "column type not implemented: `{}` {}",
-            column_name,
-            column.type_info().clone().name()
-        )
+        Ok(vec![
+            Value::String("some value".to_string()),
+            Value::String("Another value".to_string())
+        ])
     }
 }

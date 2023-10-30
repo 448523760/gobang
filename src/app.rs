@@ -2,7 +2,7 @@ use crate::clipboard::copy_to_clipboard;
 use crate::components::{
     CommandInfo, Component as _, DrawableComponent as _, EventState, StatefulDrawableComponent,
 };
-use crate::database::{MySqlPool, Pool, PostgresPool, SqlitePool, RECORDS_LIMIT_PER_PAGE};
+use crate::database::{Pool, PostgresPool, RECORDS_LIMIT_PER_PAGE};
 use crate::event::Key;
 use crate::{
     components::tab::Tab,
@@ -141,17 +141,13 @@ impl App {
                 pool.close().await;
             }
             self.pool = if conn.is_mysql() {
-                Some(Box::new(
-                    MySqlPool::new(conn.database_url()?.as_str()).await?,
-                ))
+                None
             } else if conn.is_postgres() {
                 Some(Box::new(
                     PostgresPool::new(conn.database_url()?.as_str()).await?,
                 ))
             } else {
-                Some(Box::new(
-                    SqlitePool::new(conn.database_url()?.as_str()).await?,
-                ))
+                None
             };
             self.databases
                 .update(conn, self.pool.as_ref().unwrap())

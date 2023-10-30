@@ -50,7 +50,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             conn: vec![Connection {
-                r#type: DatabaseType::MySql,
+                r#type: DatabaseType::Postgres,
                 name: None,
                 user: Some("root".to_string()),
                 host: Some("localhost".to_string()),
