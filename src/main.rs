@@ -22,6 +22,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::{
   app::App,
+  components::EventState,
   event::{Event, Key},
 };
 
@@ -54,10 +55,8 @@ async fn main() -> anyhow::Result<()> {
         // 把key传递给app去处理，然后对处理后的结果(EventState)进行match
         match app.event(key).await {
           Ok(state) => {
-            if !state.is_consumed()
-              && (key == app.config.key_config.quit || key == app.config.key_config.exit)
-            {
-              break; // todo!("figure out the break condition: is_consumed")
+            if is_break_key(state, key, &app) {
+              break;
             }
           },
           Err(err) => app.error.set(err.to_strXing())?,
@@ -71,6 +70,12 @@ async fn main() -> anyhow::Result<()> {
   terminal.show_cursor()?;
 
   Ok(())
+}
+
+#[inline]
+fn is_break_key(state: EventState, key: Key, app: &App) -> bool {
+  // key app中没有对应key的处理逻辑，并且key是退出的含义
+  !state.is_consumed() && (key == app.config.key_config.quit || key == app.config.key_config.exit)
 }
 
 fn setup_terminal() -> Result<()> {
