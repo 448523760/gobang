@@ -89,7 +89,8 @@ impl MovableComponent for CompletionComponent {
   fn draw<B: Backend>(&mut self, f: &mut Frame<B>, area: Rect, _focused: bool, x: u16, y: u16) -> Result<()> {
     if !self.word.is_empty() {
       let width = 30;
-      let candidates = self.filterd_candidates().map(|c| ListItem::new(c.to_string())).collect::<Vec<ListItem>>();
+      let candidates =
+        self.filterd_candidates().map(|c| ListItem::new(c.to_string())).collect::<Vec<ListItem>>();
       if candidates.clone().is_empty() {
         return Ok(());
       }
@@ -134,7 +135,9 @@ mod test {
   #[test]
   fn test_filterd_candidates_lowercase() {
     assert_eq!(
-      CompletionComponent::new(KeyConfig::default(), "an", false).filterd_candidates().collect::<Vec<&String>>(),
+      CompletionComponent::new(KeyConfig::default(), "an", false)
+        .filterd_candidates()
+        .collect::<Vec<&String>>(),
       vec![&"AND".to_string()]
     );
   }
@@ -142,7 +145,9 @@ mod test {
   #[test]
   fn test_filterd_candidates_uppercase() {
     assert_eq!(
-      CompletionComponent::new(KeyConfig::default(), "AN", false).filterd_candidates().collect::<Vec<&String>>(),
+      CompletionComponent::new(KeyConfig::default(), "AN", false)
+        .filterd_candidates()
+        .collect::<Vec<&String>>(),
       vec![&"AND".to_string()]
     );
   }
@@ -150,12 +155,16 @@ mod test {
   #[test]
   fn test_filterd_candidates_multiple_candidates() {
     assert_eq!(
-      CompletionComponent::new(KeyConfig::default(), "n", false).filterd_candidates().collect::<Vec<&String>>(),
+      CompletionComponent::new(KeyConfig::default(), "n", false)
+        .filterd_candidates()
+        .collect::<Vec<&String>>(),
       vec![&"NOT".to_string(), &"NULL".to_string()]
     );
 
     assert_eq!(
-      CompletionComponent::new(KeyConfig::default(), "N", false).filterd_candidates().collect::<Vec<&String>>(),
+      CompletionComponent::new(KeyConfig::default(), "N", false)
+        .filterd_candidates()
+        .collect::<Vec<&String>>(),
       vec![&"NOT".to_string(), &"NULL".to_string()]
     );
   }

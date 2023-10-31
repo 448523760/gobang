@@ -10,8 +10,11 @@ use anyhow::{anyhow, Result};
 fn execute_copy_command(command: Command, text: &str) -> Result<()> {
   let mut command = command;
 
-  let mut process =
-    command.stdin(Stdio::piped()).stdout(Stdio::null()).spawn().map_err(|e| anyhow!("`{:?}`: {}", command, e))?;
+  let mut process = command
+    .stdin(Stdio::piped())
+    .stdout(Stdio::null())
+    .spawn()
+    .map_err(|e| anyhow!("`{:?}`: {}", command, e))?;
 
   process
     .stdin
@@ -42,9 +45,10 @@ pub fn copy_to_clipboard(string: &str) -> Result<()> {
   use std::path::PathBuf;
 
   use which::which;
-  let (path, xclip_syntax) = which("xclip")
-    .ok()
-    .map_or_else(|| (which("xsel").ok().unwrap_or_else(|| PathBuf::from("xsel")), false), |path| (path, true));
+  let (path, xclip_syntax) = which("xclip").ok().map_or_else(
+    || (which("xsel").ok().unwrap_or_else(|| PathBuf::from("xsel")), false),
+    |path| (path, true),
+  );
 
   let cmd = gen_command(path, xclip_syntax);
   execute_copy_command(cmd, string)

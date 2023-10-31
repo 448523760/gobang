@@ -40,17 +40,26 @@ pub fn scroll(key: &KeyConfig) -> CommandText {
 
 pub fn scroll_up_down_multiple_lines(key: &KeyConfig) -> CommandText {
   CommandText::new(
-    format!("Scroll up/down multiple lines [{},{}]", key.scroll_up_multiple_lines, key.scroll_down_multiple_lines,),
+    format!(
+      "Scroll up/down multiple lines [{},{}]",
+      key.scroll_up_multiple_lines, key.scroll_down_multiple_lines,
+    ),
     CMD_GROUP_GENERAL,
   )
 }
 
 pub fn scroll_to_top_bottom(key: &KeyConfig) -> CommandText {
-  CommandText::new(format!("Scroll to top/bottom [{},{}]", key.scroll_to_top, key.scroll_to_bottom,), CMD_GROUP_GENERAL)
+  CommandText::new(
+    format!("Scroll to top/bottom [{},{}]", key.scroll_to_top, key.scroll_to_bottom,),
+    CMD_GROUP_GENERAL,
+  )
 }
 
 pub fn expand_collapse(key: &KeyConfig) -> CommandText {
-  CommandText::new(format!("Expand/Collapse [{},{}]", key.scroll_right, key.scroll_left,), CMD_GROUP_DATABASES)
+  CommandText::new(
+    format!("Expand/Collapse [{},{}]", key.scroll_right, key.scroll_left,),
+    CMD_GROUP_DATABASES,
+  )
 }
 
 pub fn filter(key: &KeyConfig) -> CommandText {
@@ -58,7 +67,10 @@ pub fn filter(key: &KeyConfig) -> CommandText {
 }
 
 pub fn move_focus(key: &KeyConfig) -> CommandText {
-  CommandText::new(format!("Move focus to left/right [{},{}]", key.focus_left, key.focus_right), CMD_GROUP_GENERAL)
+  CommandText::new(
+    format!("Move focus to left/right [{},{}]", key.focus_left, key.focus_right),
+    CMD_GROUP_GENERAL,
+  )
 }
 
 pub fn extend_selection_by_one_cell(key: &KeyConfig) -> CommandText {

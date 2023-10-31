@@ -69,7 +69,14 @@ impl Widget for Scrollbar {
   }
 }
 
-pub fn draw_scrollbar<B: Backend>(f: &mut Frame<B>, r: Rect, max: usize, pos: usize, border: bool, inside: bool) {
+pub fn draw_scrollbar<B: Backend>(
+  f: &mut Frame<B>,
+  r: Rect,
+  max: usize,
+  pos: usize,
+  border: bool,
+  inside: bool,
+) {
   let mut widget = Scrollbar::new(max, pos, border, inside);
   widget.style_pos = Style::default().fg(Color::Blue);
   f.render_widget(widget, r);

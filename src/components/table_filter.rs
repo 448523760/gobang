@@ -11,7 +11,8 @@ use tui::{
 use unicode_width::UnicodeWidthStr;
 
 use super::{
-  compute_character_width, CompletionComponent, Component, EventState, MovableComponent, StatefulDrawableComponent,
+  compute_character_width, CompletionComponent, Component, EventState, MovableComponent,
+  StatefulDrawableComponent,
 };
 use crate::{components::command::CommandInfo, config::KeyConfig, event::Key};
 
@@ -136,7 +137,8 @@ impl StatefulDrawableComponent for TableFilterComponent {
         f,
         area,
         false,
-        (self.table.as_ref().map_or(String::new(), |table| format!("{} ", table.name.to_string())).width() as u16)
+        (self.table.as_ref().map_or(String::new(), |table| format!("{} ", table.name.to_string())).width()
+          as u16)
           .saturating_add(self.input_cursor_position),
         0,
       )?;
@@ -144,7 +146,9 @@ impl StatefulDrawableComponent for TableFilterComponent {
 
     if focused {
       f.set_cursor(
-        (area.x + (1 + self.table.as_ref().map_or(String::new(), |table| table.name.to_string()).width() + 1) as u16)
+        (area.x
+          + (1 + self.table.as_ref().map_or(String::new(), |table| table.name.to_string()).width() + 1)
+            as u16)
           .saturating_add(self.input_cursor_position)
           .min(area.right().saturating_sub(2)),
         area.y + 1,

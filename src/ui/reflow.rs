@@ -119,7 +119,10 @@ pub struct LineTruncator<'a, 'b> {
 }
 
 impl<'a, 'b> LineTruncator<'a, 'b> {
-  pub fn new(symbols: &'b mut dyn Iterator<Item = StyledGrapheme<'a>>, max_line_width: u16) -> LineTruncator<'a, 'b> {
+  pub fn new(
+    symbols: &'b mut dyn Iterator<Item = StyledGrapheme<'a>>,
+    max_line_width: u16,
+  ) -> LineTruncator<'a, 'b> {
     LineTruncator { symbols, max_line_width, horizontal_offset: 0, current_line: vec![] }
   }
 
@@ -270,7 +273,8 @@ mod test {
     let (word_wrapper, _) = run_composer(Composer::WordWrapper { trim: true }, text, width as u16);
     let (line_truncator, _) = run_composer(Composer::LineTruncator, text, width as u16);
 
-    let wrapped = vec![&text[..width], &text[width..width * 2], &text[width * 2..width * 3], &text[width * 3..]];
+    let wrapped =
+      vec![&text[..width], &text[width..width * 2], &text[width * 2..width * 3], &text[width * 3..]];
     assert_eq!(
       word_wrapper, wrapped,
       "WordWrapper should detect the line cannot be broken on word boundary and \
@@ -283,9 +287,11 @@ mod test {
   fn line_composer_long_sentence() {
     let width = 20;
     let text = "abcd efghij klmnopabcd efgh ijklmnopabcdefg hijkl mnopab c d e f g h i j k l m n o";
-    let text_multi_space = "abcd efghij    klmnopabcd efgh     ijklmnopabcdefg hijkl mnopab c d e f g h i j k l \
+    let text_multi_space =
+      "abcd efghij    klmnopabcd efgh     ijklmnopabcdefg hijkl mnopab c d e f g h i j k l \
              m n o";
-    let (word_wrapper_single_space, _) = run_composer(Composer::WordWrapper { trim: true }, text, width as u16);
+    let (word_wrapper_single_space, _) =
+      run_composer(Composer::WordWrapper { trim: true }, text, width as u16);
     let (word_wrapper_multi_space, _) =
       run_composer(Composer::WordWrapper { trim: true }, text_multi_space, width as u16);
     let (line_truncator, _) = run_composer(Composer::LineTruncator, text, width as u16);
@@ -350,7 +356,12 @@ mod test {
     let width = 20;
     let text = "abcd efghij klmnopabcdefghijklmnopabcdefghijkl mnopab cdefghi j klmno";
     let (word_wrapper, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
-    assert_eq!(word_wrapper, vec!["abcd efghij klmnopab", "cdefghijklmnopabcdef", "ghijkl mnopab cdefgh", "i j klmno"])
+    assert_eq!(word_wrapper, vec![
+      "abcd efghij klmnopab",
+      "cdefghijklmnopabcdef",
+      "ghijkl mnopab cdefgh",
+      "i j klmno"
+    ])
   }
 
   #[test]
@@ -361,8 +372,13 @@ mod test {
     let (word_wrapper, word_wrapper_width) = run_composer(Composer::WordWrapper { trim: true }, &text, width);
     let (line_truncator, _) = run_composer(Composer::LineTruncator, &text, width);
     assert_eq!(line_truncator, vec!["コンピュータ上で文字"]);
-    let wrapped =
-      vec!["コンピュータ上で文字", "を扱う場合、典型的に", "は文字による通信を行", "う場合にその両端点で", "は、"];
+    let wrapped = vec![
+      "コンピュータ上で文字",
+      "を扱う場合、典型的に",
+      "は文字による通信を行",
+      "う場合にその両端点で",
+      "は、",
+    ];
     assert_eq!(word_wrapper, wrapped);
     assert_eq!(word_wrapper_width, vec![width, width, width, width, 4]);
   }

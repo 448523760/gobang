@@ -241,9 +241,10 @@ impl Connection {
         }
       },
       DatabaseType::Sqlite => {
-        let path = self.path.as_ref().map_or(Err(anyhow::anyhow!("type sqlite needs the path field")), |path| {
-          expand_path(path).ok_or_else(|| anyhow::anyhow!("cannot expand file path"))
-        })?;
+        let path =
+          self.path.as_ref().map_or(Err(anyhow::anyhow!("type sqlite needs the path field")), |path| {
+            expand_path(path).ok_or_else(|| anyhow::anyhow!("cannot expand file path"))
+          })?;
 
         Ok(format!("sqlite://{path}", path = path.to_str().unwrap()))
       },
@@ -269,9 +270,12 @@ impl Connection {
 }
 
 pub fn get_app_config_path() -> anyhow::Result<std::path::PathBuf> {
-  let mut path =
-    if cfg!(target_os = "macos") { dirs_next::home_dir().map(|h| h.join(".config")) } else { dirs_next::config_dir() }
-      .ok_or_else(|| anyhow::anyhow!("failed to find os config dir."))?;
+  let mut path = if cfg!(target_os = "macos") {
+    dirs_next::home_dir().map(|h| h.join(".config"))
+  } else {
+    dirs_next::config_dir()
+  }
+  .ok_or_else(|| anyhow::anyhow!("failed to find os config dir."))?;
 
   path.push("gobang");
   std::fs::create_dir_all(&path)?;
@@ -343,7 +347,10 @@ mod test {
 
     assert_eq!(expand_path(&Path::new("~/foo")), Some(PathBuf::from(&home).join("foo")));
 
-    assert_eq!(expand_path(&Path::new("~/foo/~/bar")), Some(PathBuf::from(&home).join("foo").join("~").join("bar")));
+    assert_eq!(
+      expand_path(&Path::new("~/foo/~/bar")),
+      Some(PathBuf::from(&home).join("foo").join("~").join("bar"))
+    );
   }
 
   #[test]
@@ -360,7 +367,10 @@ mod test {
       Some(PathBuf::from(&home).join("foo").join(test_env).join("bar"))
     );
 
-    assert_eq!(expand_path(&Path::new("~/foo")), Some(PathBuf::from(&dirs_next::home_dir().unwrap()).join("foo")));
+    assert_eq!(
+      expand_path(&Path::new("~/foo")),
+      Some(PathBuf::from(&dirs_next::home_dir().unwrap()).join("foo"))
+    );
 
     assert_eq!(
       expand_path(&Path::new("~/foo/~/bar")),

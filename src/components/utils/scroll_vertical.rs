@@ -49,7 +49,12 @@ impl VerticalScroll {
 /// selection，表示当前选择的位置；
 /// selection_max，表示可选择的最大位置。
 /// 函数的返回类型是usize，表示滚动条的新位置。
-const fn calc_scroll_top(current_top: usize, height_in_lines: usize, selection: usize, selection_max: usize) -> usize {
+const fn calc_scroll_top(
+  current_top: usize,
+  height_in_lines: usize,
+  selection: usize,
+  selection_max: usize,
+) -> usize {
   if height_in_lines == 0 {
     return 0;
   }

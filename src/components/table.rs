@@ -12,8 +12,8 @@ use tui::{
 use unicode_width::UnicodeWidthStr;
 
 use super::{
-  utils::scroll_vertical::VerticalScroll, Component, DrawableComponent, EventState, StatefulDrawableComponent,
-  TableStatusComponent, TableValueComponent,
+  utils::scroll_vertical::VerticalScroll, Component, DrawableComponent, EventState,
+  StatefulDrawableComponent, TableStatusComponent, TableValueComponent,
 };
 use crate::{
   components::command::{self, CommandInfo},
@@ -162,8 +162,10 @@ impl TableComponent {
       self.selection_area_corner = Some((self.selected_column, self.selected_row.selected().unwrap_or(0)));
     }
     if let Some((x, y)) = self.selection_area_corner {
-      self.selection_area_corner =
-        Some((if positive { (x + 1).min(self.headers.len().saturating_sub(1)) } else { x.saturating_sub(1) }, y));
+      self.selection_area_corner = Some((
+        if positive { (x + 1).min(self.headers.len().saturating_sub(1)) } else { x.saturating_sub(1) },
+        y,
+      ));
     }
   }
 
@@ -172,8 +174,10 @@ impl TableComponent {
       self.selection_area_corner = Some((self.selected_column, self.selected_row.selected().unwrap_or(0)));
     }
     if let Some((x, y)) = self.selection_area_corner {
-      self.selection_area_corner =
-        Some((x, if positive { (y + 1).min(self.rows.len().saturating_sub(1)) } else { y.saturating_sub(1) }));
+      self.selection_area_corner = Some((
+        x,
+        if positive { (y + 1).min(self.rows.len().saturating_sub(1)) } else { y.saturating_sub(1) },
+      ));
     }
   }
 
@@ -238,7 +242,10 @@ impl TableComponent {
     new_rows
   }
 
-  fn calculate_cell_widths(&self, area_width: u16) -> (usize, Vec<String>, Vec<Vec<String>>, Vec<Constraint>) {
+  fn calculate_cell_widths(
+    &self,
+    area_width: u16,
+  ) -> (usize, Vec<String>, Vec<Vec<String>>, Vec<Constraint>) {
     if self.rows.is_empty() {
       return (0, Vec::new(), Vec::new(), Vec::new());
     }
@@ -259,7 +266,8 @@ impl TableComponent {
         .iter()
         .max()
         .map_or(3, |v| {
-          *v.max(&self.headers.get(column_index).map_or(3, |header| header.to_string().width())).clamp(&3, &20)
+          *v.max(&self.headers.get(column_index).map_or(3, |header| header.to_string().width()))
+            .clamp(&3, &20)
         });
       if widths.iter().map(|(_, width)| width).sum::<usize>() + length + widths.len() + 1
         >= area_width.saturating_sub(number_column_width) as usize
@@ -367,7 +375,8 @@ impl StatefulDrawableComponent for TableComponent {
     );
 
     let block = Block::default().borders(Borders::NONE);
-    let (selected_column_index, headers, rows, constraints) = self.calculate_cell_widths(block.inner(chunks[0]).width);
+    let (selected_column_index, headers, rows, constraints) =
+      self.calculate_cell_widths(block.inner(chunks[0]).width);
     let header_cells = headers.iter().enumerate().map(|(column_index, h)| {
       Cell::from(h.to_string()).style(if selected_column_index == column_index {
         Style::default().add_modifier(Modifier::BOLD)
@@ -377,15 +386,18 @@ impl StatefulDrawableComponent for TableComponent {
     });
     let header = Row::new(header_cells).height(1).bottom_margin(1);
     let rows = rows.iter().enumerate().map(|(row_index, item)| {
-      let height = item.iter().map(|content| content.chars().filter(|c| *c == '\n').count()).max().unwrap_or(0) + 1;
+      let height =
+        item.iter().map(|content| content.chars().filter(|c| *c == '\n').count()).max().unwrap_or(0) + 1;
       let cells = item.iter().enumerate().map(|(column_index, c)| {
-        Cell::from(c.to_string()).style(if self.is_selected_cell(row_index, column_index, selected_column_index) {
-          Style::default().bg(Color::Blue)
-        } else if self.is_number_column(row_index, column_index) {
-          Style::default().add_modifier(Modifier::BOLD)
-        } else {
-          Style::default()
-        })
+        Cell::from(c.to_string()).style(
+          if self.is_selected_cell(row_index, column_index, selected_column_index) {
+            Style::default().bg(Color::Blue)
+          } else if self.is_number_column(row_index, column_index) {
+            Style::default().add_modifier(Modifier::BOLD)
+          } else {
+            Style::default()
+          },
+        )
       });
       Row::new(cells).height(height as u16).bottom_margin(1)
     });

@@ -36,7 +36,10 @@ impl DrawableComponent for HelpComponent {
       );
 
       f.render_widget(Clear, area);
-      f.render_widget(Block::default().title("Help").borders(Borders::ALL).border_type(BorderType::Thick), area);
+      f.render_widget(
+        Block::default().title("Help").borders(Borders::ALL).border_type(BorderType::Thick),
+        area,
+      );
 
       let chunks = Layout::default()
         .vertical_margin(1)
@@ -48,8 +51,11 @@ impl DrawableComponent for HelpComponent {
       f.render_widget(Paragraph::new(self.get_text(chunks[0].width as usize)).scroll((scroll, 0)), chunks[0]);
 
       f.render_widget(
-        Paragraph::new(Spans::from(vec![Span::styled(format!("gobang {}", Version::new()), Style::default())]))
-          .alignment(Alignment::Right),
+        Paragraph::new(Spans::from(vec![Span::styled(
+          format!("gobang {}", Version::new()),
+          Style::default(),
+        )]))
+        .alignment(Alignment::Right),
         chunks[1],
       );
     }

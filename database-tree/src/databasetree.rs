@@ -1,8 +1,8 @@
 use std::{collections::BTreeSet, usize};
 
 use crate::{
-  databasetreeitems::DatabaseTreeItems, error::Result, item::DatabaseTreeItemKind, tree_iter::TreeIterator, Database,
-  Table,
+  databasetreeitems::DatabaseTreeItems, error::Result, item::DatabaseTreeItemKind, tree_iter::TreeIterator,
+  Database, Table,
 };
 
 ///
@@ -46,7 +46,8 @@ impl DatabaseTree {
   }
 
   pub fn filter(&self, filter_text: String) -> Self {
-    let mut new_self = Self { items: self.items.filter(filter_text), selection: Some(0), visual_selection: None };
+    let mut new_self =
+      Self { items: self.items.filter(filter_text), selection: Some(0), visual_selection: None };
     new_self.visual_selection = new_self.calc_visual_selection();
     new_self
   }
@@ -119,15 +120,13 @@ impl DatabaseTree {
   }
 
   fn visual_index_to_absolute(&self, visual_index: usize) -> Option<usize> {
-    self.items.iterate(0, self.items.len()).enumerate().find_map(
-      |(i, (abs, _))| {
-        if i == visual_index {
-          Some(abs)
-        } else {
-          None
-        }
-      },
-    )
+    self.items.iterate(0, self.items.len()).enumerate().find_map(|(i, (abs, _))| {
+      if i == visual_index {
+        Some(abs)
+      } else {
+        None
+      }
+    })
   }
 
   fn calc_visual_selection(&self) -> Option<VisualSelection> {
@@ -495,7 +494,10 @@ mod test {
   #[test]
   fn test_selection_skips_collapsed() {
     let items = vec![
-      Database::new("a".to_string(), vec![Table::new("b".to_string()).into(), Table::new("c".to_string()).into()]),
+      Database::new("a".to_string(), vec![
+        Table::new("b".to_string()).into(),
+        Table::new("c".to_string()).into(),
+      ]),
       Database::new("d".to_string(), vec![Table::new("e".to_string()).into()]),
     ];
 
@@ -682,7 +684,10 @@ mod test {
   #[test]
   fn test_visible_selection() {
     let items = vec![
-      Database::new("a".to_string(), vec![Table::new("b".to_string()).into(), Table::new("c".to_string()).into()]),
+      Database::new("a".to_string(), vec![
+        Table::new("b".to_string()).into(),
+        Table::new("c".to_string()).into(),
+      ]),
       Database::new("d".to_string(), vec![Table::new("e".to_string()).into()]),
     ];
 

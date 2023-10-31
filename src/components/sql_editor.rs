@@ -10,8 +10,8 @@ use tui::{
 use unicode_width::UnicodeWidthStr;
 
 use super::{
-  compute_character_width, CompletionComponent, Component, EventState, MovableComponent, StatefulDrawableComponent,
-  TableComponent,
+  compute_character_width, CompletionComponent, Component, EventState, MovableComponent,
+  StatefulDrawableComponent, TableComponent,
 };
 use crate::{
   components::command::CommandInfo,
@@ -119,7 +119,8 @@ impl SqlEditorComponent {
       if is_last_word {
         self.input_cursor_position_x += " ".to_string().width() as u16
       }
-      self.input_cursor_position_x -= self.completion.word().chars().map(compute_character_width).sum::<u16>();
+      self.input_cursor_position_x -=
+        self.completion.word().chars().map(compute_character_width).sum::<u16>();
       self.update_completion();
       return Ok(EventState::Consumed);
     }
@@ -146,11 +147,13 @@ impl StatefulDrawableComponent for SqlEditorComponent {
 
     if let Some(result) = self.query_result.as_ref() {
       let result = Paragraph::new(result.result_str())
-        .block(Block::default().borders(Borders::ALL).style(if focused && matches!(self.focus, Focus::Editor) {
-          Style::default()
-        } else {
-          Style::default().fg(Color::DarkGray)
-        }))
+        .block(Block::default().borders(Borders::ALL).style(
+          if focused && matches!(self.focus, Focus::Editor) {
+            Style::default()
+          } else {
+            Style::default().fg(Color::DarkGray)
+          },
+        ))
         .wrap(Wrap { trim: true });
       f.render_widget(result, layout[1]);
     } else {
@@ -162,7 +165,8 @@ impl StatefulDrawableComponent for SqlEditorComponent {
         (layout[0].x + 1)
           .saturating_add(self.input_cursor_position_x % layout[0].width.saturating_sub(2))
           .min(area.right().saturating_sub(2)),
-        (layout[0].y + 1 + self.input_cursor_position_x / layout[0].width.saturating_sub(2)).min(layout[0].bottom()),
+        (layout[0].y + 1 + self.input_cursor_position_x / layout[0].width.saturating_sub(2))
+          .min(layout[0].bottom()),
       )
     }
 

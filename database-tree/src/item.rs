@@ -109,7 +109,11 @@ impl DatabaseTreeItem {
   pub fn new_schema(database: &Database, schema: &Schema, _collapsed: bool) -> Self {
     Self {
       info: TreeItemInfo::new(1, false),
-      kind: DatabaseTreeItemKind::Schema { database: database.clone(), schema: schema.clone(), collapsed: true },
+      kind: DatabaseTreeItemKind::Schema {
+        database: database.clone(),
+        schema: schema.clone(),
+        collapsed: true,
+      },
     }
   }
 
@@ -152,13 +156,15 @@ impl DatabaseTreeItem {
 
   pub fn collapse_schema(&mut self) {
     if let DatabaseTreeItemKind::Schema { schema, database, .. } = &self.kind {
-      self.kind = DatabaseTreeItemKind::Schema { database: database.clone(), schema: schema.clone(), collapsed: true }
+      self.kind =
+        DatabaseTreeItemKind::Schema { database: database.clone(), schema: schema.clone(), collapsed: true }
     }
   }
 
   pub fn expand_schema(&mut self) {
     if let DatabaseTreeItemKind::Schema { schema, database, .. } = &self.kind {
-      self.kind = DatabaseTreeItemKind::Schema { database: database.clone(), schema: schema.clone(), collapsed: false };
+      self.kind =
+        DatabaseTreeItemKind::Schema { database: database.clone(), schema: schema.clone(), collapsed: false };
     }
   }
 

@@ -42,7 +42,13 @@ pub struct Column {
 
 impl TableRow for Column {
   fn fields(&self) -> Vec<String> {
-    vec!["name".to_string(), "type".to_string(), "null".to_string(), "default".to_string(), "comment".to_string()]
+    vec![
+      "name".to_string(),
+      "type".to_string(),
+      "null".to_string(),
+      "default".to_string(),
+      "comment".to_string(),
+    ]
   }
 
   fn columns(&self) -> Vec<String> {
@@ -113,7 +119,13 @@ impl Pool for PostgresPool {
         headers,
         rows: records,
         database: Database { name: "-".to_string(), children: Vec::new() },
-        table: Table { name: "-".to_string(), create_time: None, update_time: None, engine: None, schema: None },
+        table: Table {
+          name: "-".to_string(),
+          create_time: None,
+          update_time: None,
+          engine: None,
+          schema: None,
+        },
       });
     }
 
@@ -139,7 +151,8 @@ impl Pool for PostgresPool {
     }];
 
     let mut schemas = vec![];
-    for (key, group) in &tables.iter().sorted_by(|a, b| Ord::cmp(&b.schema, &a.schema)).group_by(|t| t.schema.as_ref())
+    for (key, group) in
+      &tables.iter().sorted_by(|a, b| Ord::cmp(&b.schema, &a.schema)).group_by(|t| t.schema.as_ref())
     {
       if let Some(key) = key {
         schemas.push(Schema { name: key.to_string(), tables: group.cloned().collect() }.into())
@@ -183,12 +196,20 @@ impl Pool for PostgresPool {
     Ok(columns)
   }
 
-  async fn get_constraints(&self, _database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
+  async fn get_constraints(
+    &self,
+    _database: &Database,
+    table: &Table,
+  ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
     let constraints: Vec<Box<dyn TableRow>> = vec![];
     Ok(constraints)
   }
 
-  async fn get_foreign_keys(&self, _database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
+  async fn get_foreign_keys(
+    &self,
+    _database: &Database,
+    table: &Table,
+  ) -> anyhow::Result<Vec<Box<dyn TableRow>>> {
     let constraints: Vec<Box<dyn TableRow>> = vec![];
     Ok(constraints)
   }

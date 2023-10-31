@@ -77,8 +77,11 @@ impl<'a> From<&'a SyntaxText> for tui::text::Text<'a> {
 }
 
 fn syntact_style_to_tui(style: &Style) -> tui::style::Style {
-  let mut res =
-    tui::style::Style::default().fg(tui::style::Color::Rgb(style.foreground.r, style.foreground.g, style.foreground.b));
+  let mut res = tui::style::Style::default().fg(tui::style::Color::Rgb(
+    style.foreground.r,
+    style.foreground.g,
+    style.foreground.b,
+  ));
 
   if style.font_style.contains(FontStyle::BOLD) {
     res = res.add_modifier(tui::style::Modifier::BOLD);

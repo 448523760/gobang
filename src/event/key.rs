@@ -149,7 +149,9 @@ impl From<event::KeyEvent> for Key {
 
       // First check for char + modifier
       event::KeyEvent { code: event::KeyCode::Char(c), modifiers: event::KeyModifiers::ALT } => Key::Alt(c),
-      event::KeyEvent { code: event::KeyCode::Char(c), modifiers: event::KeyModifiers::CONTROL } => Key::Ctrl(c),
+      event::KeyEvent { code: event::KeyCode::Char(c), modifiers: event::KeyModifiers::CONTROL } => {
+        Key::Ctrl(c)
+      },
 
       event::KeyEvent { code: event::KeyCode::Char(c), .. } => Key::Char(c),
 

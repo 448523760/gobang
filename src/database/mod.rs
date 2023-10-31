@@ -23,8 +23,16 @@ pub trait Pool: Send + Sync {
     filter: Option<String>,
   ) -> anyhow::Result<(Vec<String>, Vec<Vec<String>>)>;
   async fn get_columns(&self, database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
-  async fn get_constraints(&self, database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
-  async fn get_foreign_keys(&self, database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
+  async fn get_constraints(
+    &self,
+    database: &Database,
+    table: &Table,
+  ) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
+  async fn get_foreign_keys(
+    &self,
+    database: &Database,
+    table: &Table,
+  ) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
   async fn get_indexes(&self, database: &Database, table: &Table) -> anyhow::Result<Vec<Box<dyn TableRow>>>;
   async fn close(&self);
 }

@@ -4,7 +4,8 @@ use std::{
 };
 
 use crate::{
-  error::Result, item::DatabaseTreeItemKind, treeitems_iter::TreeItemsIterator, Child, Database, DatabaseTreeItem,
+  error::Result, item::DatabaseTreeItemKind, treeitems_iter::TreeItemsIterator, Child, Database,
+  DatabaseTreeItem,
 };
 
 #[derive(Default)]

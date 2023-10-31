@@ -74,11 +74,17 @@ impl DatabasesComponent {
     self.filterd_tree.as_ref().unwrap_or(&self.tree)
   }
 
-  fn tree_item_to_span(item: DatabaseTreeItem, selected: bool, width: u16, filter: Option<String>) -> Spans<'static> {
+  fn tree_item_to_span(
+    item: DatabaseTreeItem,
+    selected: bool,
+    width: u16,
+    filter: Option<String>,
+  ) -> Spans<'static> {
     let name = item.kind().name();
     let indent = item.info().indent();
 
-    let indent_str = if indent == 0 { String::from("") } else { format!("{:w$}", " ", w = (indent as usize) * 2) };
+    let indent_str =
+      if indent == 0 { String::from("") } else { format!("{:w$}", " ", w = (indent as usize) * 2) };
 
     let arrow = if item.kind().is_database() || item.kind().is_schema() {
       if item.kind().is_database_collapsed() || item.kind().is_schema_collapsed() {
@@ -101,7 +107,11 @@ impl DatabasesComponent {
           ),
           Span::styled(
             middle.to_string(),
-            if selected { Style::default().bg(Color::Blue).fg(Color::Blue) } else { Style::default().fg(Color::Blue) },
+            if selected {
+              Style::default().bg(Color::Blue).fg(Color::Blue)
+            } else {
+              Style::default().fg(Color::Blue)
+            },
           ),
           Span::styled(
             format!("{:w$}", last.to_string(), w = width as usize),
@@ -187,8 +197,11 @@ impl Component for DatabasesComponent {
     }
 
     if matches!(self.focus, Focus::Filter) {
-      self.filterd_tree =
-        if self.filter.input_str().is_empty() { None } else { Some(self.tree.filter(self.filter.input_str())) };
+      self.filterd_tree = if self.filter.input_str().is_empty() {
+        None
+      } else {
+        Some(self.tree.filter(self.filter.input_str()))
+      };
     }
 
     match key {
@@ -288,7 +301,10 @@ mod test {
         WIDTH,
         None,
       ),
-      Spans::from(Span::styled(format!("  {:w$}", "bar", w = WIDTH as usize), Style::default().bg(Color::Blue),))
+      Spans::from(Span::styled(
+        format!("  {:w$}", "bar", w = WIDTH as usize),
+        Style::default().bg(Color::Blue),
+      ))
     );
   }
 
