@@ -39,6 +39,9 @@ async fn main() -> anyhow::Result<()> {
 
   terminal.clear()?;
 
+  /// 整个loop的流程:
+  /// 1. app.draw: 重绘UI -> app.draw
+  /// 2. app.event: 读取Key并处理 -> app.event(key)
   loop {
     terminal.draw(|f| {
       if let Err(err) = app.draw(f) {
@@ -48,15 +51,16 @@ async fn main() -> anyhow::Result<()> {
     })?;
     match events.next()? {
       Event::Input(key) => {
+        // 把key传递给app去处理，然后对处理后的结果(EventState)进行match
         match app.event(key).await {
           Ok(state) => {
             if !state.is_consumed()
               && (key == app.config.key_config.quit || key == app.config.key_config.exit)
             {
-              break;
+              break; // todo!("figure out the break condition: is_consumed")
             }
           },
-          Err(err) => app.error.set(err.to_string())?,
+          Err(err) => app.error.set(err.to_strXing())?,
         }
       },
       Event::Tick => (),
